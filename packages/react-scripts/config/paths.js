@@ -73,6 +73,9 @@ function getServedPath(appPackageJson) {
   return ensureSlash(servedUrl, true);
 }
 
+// Regex to match backpack node modules
+var backpackModulesRegex = /node_modules[\\\/]bpk-/;
+
 // config after eject: we're in ./config/
 module.exports = {
   appBuild: resolveApp('build'),
@@ -86,7 +89,9 @@ module.exports = {
   appNodeModules: resolveApp('node_modules'),
   nodePaths: nodePaths,
   publicUrl: getPublicUrl(resolveApp('package.json')),
-  servedPath: getServedPath(resolveApp('package.json'))
+  servedPath: getServedPath(resolveApp('package.json')),
+  backpackModulesRegex: backpackModulesRegex,
+  appSsrJs: resolveApp('src/ssr.js'),
 };
 
 // @remove-on-eject-begin
@@ -112,6 +117,8 @@ module.exports = {
   // These properties only exist before ejecting:
   ownPath: resolveOwn('.'),
   ownNodeModules: resolveOwn('node_modules'), // This is empty on npm 3
+  backpackModulesRegex: backpackModulesRegex,
+  appSsrJs: resolveApp('src/ssr.js'),
 };
 
 var ownPackageJson = require('../package.json');
@@ -137,6 +144,8 @@ if (!reactScriptsLinked && __dirname.indexOf(path.join('packages', 'react-script
     // These properties only exist before ejecting:
     ownPath: resolveOwn('.'),
     ownNodeModules: resolveOwn('node_modules'),
+    backpackModulesRegex: backpackModulesRegex,
+    appSsrJs: resolveOwn('template/src/ssr.js'),
   };
 }
 // @remove-on-eject-end

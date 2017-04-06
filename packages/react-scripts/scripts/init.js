@@ -29,6 +29,11 @@ module.exports = function(appPath, appName, verbose, originalDirectory, template
     'start': 'react-scripts start',
     'build': 'react-scripts build',
     'test': 'react-scripts test --env=jsdom',
+    'lint:scss': 'stylelint \'src/**/*.scss\' --syntax scss',
+    'lint:scss:fix': 'stylefmt --recursive \'src/**/*.scss\'',
+    'lint:js': 'eslint . --ignore-path .gitignore --ext .js,.jsx',
+    'lint:js:fix': 'eslint . --ignore-path .gitignore --ext .js,.jsx --fix',
+    'lint': 'npm run lint:js && npm run lint:scss',
     'eject': 'react-scripts eject'
   };
 
@@ -71,16 +76,20 @@ module.exports = function(appPath, appName, verbose, originalDirectory, template
 
   if (useYarn) {
     command = 'yarnpkg';
-    args = ['add'];
+    args = ['add', '--dev'];
   } else {
     command = 'npm';
     args = [
       'install',
-      '--save',
+      '--save-dev',
       verbose && '--verbose'
     ].filter(function(e) { return e; });
   }
-  args.push('react', 'react-dom');
+
+  args.push(
+    'react',
+    'react-dom'
+  );
 
   // Install additional template dependencies, if present
   var templateDependenciesPath = path.join(appPath, '.template.dependencies.json');
@@ -104,6 +113,52 @@ module.exports = function(appPath, appName, verbose, originalDirectory, template
       console.error('`' + command + ' ' + args.join(' ') + '` failed');
       return;
     }
+  }
+
+  // BPK: Install additional backpack components
+  var bpkArgs = args.slice();
+  bpkArgs.push(
+    'bpk-component-button',
+    'bpk-component-code',
+    'bpk-component-grid',
+    'bpk-component-heading',
+    'bpk-component-paragraph',
+    'bpk-mixins',
+    'bpk-stylesheets'
+  );
+  var bpkProc = spawn.sync(command, bpkArgs, {stdio: 'inherit'});
+  if (bpkProc.status !== 0) {
+    console.error('`' + command + ' ' + bpkArgs.join(' ') + '` failed');
+    return;
+  }
+
+  // BPK: Re-read package.json as dependencies have been added
+  const appPackagePath = path.join(appPath, 'package.json');
+  delete require.cache[require.resolve(appPackagePath)]
+  appPackage = require(appPackagePath);
+
+  // BPK: If React is installed in `dependencies`, move it to `devDependencies`
+  if (isReactInstalled(appPackage)) {
+    console.log('Moving react and react-dom to devDependencies');
+    console.log(JSON.stringify(appPackage));
+
+    const devDependencies = Object.assign({}, appPackage.devDependencies);
+    const dependencies = Object.assign({}, appPackage.dependencies);
+    // const dependencies = appPackage.dependencies.slice();
+
+    devDependencies.react = dependencies.react;
+    devDependencies['react-dom'] = dependencies['react-dom'];
+
+    delete dependencies.react;
+    delete dependencies['react-dom'];
+
+    appPackage.devDependencies = devDependencies;
+    appPackage.dependencies = dependencies;
+
+    fs.writeFileSync(
+      path.join(appPath, 'package.json'),
+      JSON.stringify(appPackage, null, 2)
+    );
   }
 
   // Display the most elegant way to cd.
@@ -132,6 +187,9 @@ module.exports = function(appPath, appName, verbose, originalDirectory, template
   console.log();
   console.log(chalk.cyan('  ' + displayedCommand + ' test'));
   console.log('    Starts the test runner.');
+  console.log();
+  console.log(chalk.cyan('  ' + displayedCommand + ' lint'));
+  console.log('    Lints all JavaScript.');
   console.log();
   console.log(chalk.cyan(`  ${displayedCommand} ${useYarn ? '' : 'run '}eject`));
   console.log('    Removes this tool and copies build dependencies, configuration files');

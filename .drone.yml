@@ -1,0 +1,32 @@
+build:
+  image: node:6.9.5
+  environment:
+    - NPM_CONFIG_LOGLEVEL=warn
+  commands:
+    - npm install
+    - ./node_modules/.bin/lerna bootstrap
+    - tasks/e2e-simple.sh
+    - tasks/e2e-installs.sh
+    - tasks/e2e-kitchensink.sh
+
+notify:
+  slack:
+    webhook_url: https://hooks.slack.com/services/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
+    username: Backpack
+    channel: backpack-private
+    template: >
+      :white_check_mark: backpack-react-scripts has been successfully built (<http://drone.eu-west-1.prod.aws.skyscanner.local/backpack/create-react-app/$$BUILD_NUMBER|$$BUILD_NUMBER>).
+    when:
+      branch: master
+      success: true
+
+notify:
+  slack:
+    webhook_url: https://hooks.slack.com/services/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
+    username: Backpack
+    channel: backpack-private
+    template: >
+      <!channel> :x: backpack-react-scripts failed to build correctly (<http://drone.eu-west-1.prod.aws.skyscanner.local/backpack/create-react-app/$$BUILD_NUMBER|$$BUILD_NUMBER>).
+    when:
+      branch: master
+      failure: true

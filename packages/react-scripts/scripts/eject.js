@@ -56,6 +56,7 @@ prompt(
     path.join('config', 'polyfills.js'),
     path.join('config', 'webpack.config.dev.js'),
     path.join('config', 'webpack.config.prod.js'),
+    path.join('config', 'webpack.config.ssr.js'),
     path.join('config', 'jest', 'cssTransform.js'),
     path.join('config', 'jest', 'fileTransform.js'),
     path.join('scripts', 'build.js'),
@@ -90,7 +91,7 @@ prompt(
   var ownPackage = require(path.join(ownPath, 'package.json'));
   var appPackage = require(path.join(appPath, 'package.json'));
   var babelConfig = JSON.parse(fs.readFileSync(path.join(ownPath, 'babelrc'), 'utf8'));
-  var eslintConfig = JSON.parse(fs.readFileSync(path.join(ownPath, 'eslintrc'), 'utf8'));
+  // var eslintConfig = JSON.parse(fs.readFileSync(path.join(ownPath, 'eslintrc'), 'utf8'));
 
   console.log(cyan('Updating the dependencies'));
   var ownPackageName = ownPackage.name;
@@ -143,8 +144,8 @@ prompt(
   appPackage.babel = babelConfig;
 
   // Add ESlint config
-  console.log('  Adding ' + cyan('ESLint') +' configuration');
-  appPackage.eslintConfig = eslintConfig;
+  // console.log('  Adding ' + cyan('ESLint') +' configuration');
+  // appPackage.eslintConfig = eslintConfig;
 
   fs.writeFileSync(
     path.join(appPath, 'package.json'),

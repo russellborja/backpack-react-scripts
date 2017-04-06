@@ -16,12 +16,14 @@ var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 var InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 var WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+var sassFunctions = require('bpk-mixins/sass-functions');
 var getClientEnvironment = require('./env');
 var paths = require('./paths');
+var pkgJson = require(paths.appPackageJson);
 
 // @remove-on-eject-begin
 // `path` is not used after eject - see https://github.com/facebookincubator/create-react-app/issues/1174
-var path = require('path');
+// var path = require('path');
 // @remove-on-eject-end
 
 // Webpack uses `publicPath` to determine where the app is being served from.
@@ -33,6 +35,12 @@ var publicPath = '/';
 var publicUrl = '';
 // Get environment variables to inject into our app.
 var env = getClientEnvironment(publicUrl);
+
+var bpkReactScriptsConfig = pkgJson['backpack-react-scripts'] || {};
+
+var customModuleRegex = bpkReactScriptsConfig.babelIncludeRegex
+  ? new RegExp(bpkReactScriptsConfig.babelIncludeRegex) 
+  : function () { return false; };
 
 // This is the development configuration.
 // It is focused on developer experience and fast rebuilds.
@@ -109,13 +117,13 @@ module.exports = {
   module: {
     // First, run the linter.
     // It's important to do this before Babel processes the JS.
-    preLoaders: [
-      {
-        test: /\.(js|jsx)$/,
-        loader: 'eslint',
-        include: paths.appSrc,
-      }
-    ],
+    // preLoaders: [
+    //   {
+    //     test: /\.(js|jsx)$/,
+    //     loader: 'eslint',
+    //     include: paths.appSrc,
+    //   }
+    // ],
     loaders: [
       // ** ADDING/UPDATING LOADERS **
       // The "url" loader handles all assets unless explicitly excluded.
@@ -135,7 +143,7 @@ module.exports = {
           // Webpack 2 fixes this, but for now we include this hack.
           // https://github.com/facebookincubator/create-react-app/issues/1713
           /\.(js|jsx)(\?.*)?$/,
-          /\.css$/,
+          /\.s?css$/,
           /\.json$/,
           /\.svg$/
         ],
@@ -148,7 +156,11 @@ module.exports = {
       // Process JS with Babel.
       {
         test: /\.(js|jsx)$/,
-        include: paths.appSrc,
+        include: [
+          paths.appSrc,
+          paths.backpackModulesRegex,
+          customModuleRegex
+        ],
         loader: 'babel',
         query: {
           // @remove-on-eject-begin
@@ -166,6 +178,10 @@ module.exports = {
       // "style" loader turns CSS into JS modules that inject <style> tags.
       // In production, we use a plugin to extract that CSS to a file, but
       // in development "style" loader enables hot editing of CSS.
+      {
+        test: /\.scss$/,
+        loader: 'style!css?importLoaders=1!postcss!sass?config=sass'
+      },
       {
         test: /\.css$/,
         loader: 'style!css?importLoaders=1!postcss'
@@ -190,10 +206,10 @@ module.exports = {
   },
   // @remove-on-eject-begin
   // Point ESLint to our predefined config.
-  eslint: {
-    configFile: path.join(__dirname, '../eslintrc'),
-    useEslintrc: false,
-  },
+  // eslint: {
+  //   configFile: path.join(__dirname, '../eslintrc'),
+  //   useEslintrc: false,
+  // },
   // @remove-on-eject-end
   // We use PostCSS for autoprefixing only.
   postcss: function() {
@@ -207,6 +223,9 @@ module.exports = {
         ]
       }),
     ];
+  },
+  sass: {
+    functions: sassFunctions
   },
   plugins: [
     // Makes some environment variables available in index.html.
